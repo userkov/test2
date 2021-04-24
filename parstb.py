@@ -17,32 +17,28 @@ class parstb():
         return driver
 
     def get_blogs(self):
-        """Создание словаря blog_dict. Key = Число дня. Item = ссылка"""
-        print("[method: get_blogs]")
-        day_arr = []
+        """Создание web_day_arr."""
+        print("[method: get_blogs]: ", end="")
         driver = self.__get_driver()
         driver.get("https://cbcol.mskobr.ru/elektronnye_servisy/blog/")
-        time.sleep(10)
-        blogs_arr = driver.find_elements_by_class_name("item-body-h")
-        for blog in blogs_arr:
-            blog_txt = blog.text  # FullDate
-            link_el = blog.find_element_by_tag_name('a')
-            link = link_el.get_attribute('href')  # Link
-            num = ''
-            for char in blog_txt:
-                if char.isdigit() == True:
-                    if len(num) <= 1:
-                        num += char
-                    else:
-                        break
-                elif num != '':
-                    break
-            day_arr.append({"FullDate": blog_txt, "Date": num, "StatusDay": "None", "Link": link})
+        try:
+            web_day_arr = []
+            time.sleep(10)
+            blogs_arr = driver.find_elements_by_class_name("item-body-h")
+            for blog in blogs_arr:
+                blog_txt = blog.text  # FullDate
+                if "Расписание" in blog_txt:
+                    link_el = blog.find_element_by_tag_name('a')
+                    link = link_el.get_attribute('href')  # Link
+                    web_day_arr.append({"FullDate": blog_txt, "Link": link})
+            print("Successful")
+            return web_day_arr
+        except:
+            print("Failed")
+        finally:
+            driver.quit()
 
-        driver.quit()
-        return day_arr
-
-    def __get_img(self, link):
+    def get_img(self, link):
         """Создание скришнтоа расписания."""
         print("[method: get_img]")
         driver = self.__get_driver()
@@ -71,24 +67,11 @@ class parstb():
                     time.sleep(3)
                     table.screenshot("table.png")
                     png_crop.crop(location_table, size_table, location_group, size_group)
-
-                    time.sleep(60)
                     driver.quit()
                     return True
                 else:
                     print("False")
         print(f"Error: [{self.group} — не найден]")
         driver.quit()
-        pass
 
-    def get_img_day(self, day):
-        print("[method: get_img_day]")
-        day_arr = self.get_blogs()
-        for day_dict in day_arr:
-            print(f"{day_dict} : ", end="")
-            if day_dict["Date"] == day:
-                print("True")
-                exit_png = self.__get_img(day_dict["Link"])
-                return True
-            else:
-                print("False")
+

@@ -5,49 +5,43 @@ import vk
 from datetime import datetime
 
 
-
-def check_new_day(web_arr, db_arr):
+def check_new_day(web_day_arr, db_day_arr):
     """Сравнение двух словарей web_dict и db_dict для поиска нового дня"""
-    var_arr = []
-    new_day = False
-    for day_web_dict in web_arr:
-        print(f"[{day_web_dict}]")
-        local_new_day = True
-        for day_db_dict in db_arr:
-            print(f"    {day_db_dict} [{day_web_dict['Date']} == {day_db_dict['Date']}] :  ", end="")
-            if day_web_dict['Date'] == day_db_dict['Date']:
-                print("True")
-                local_new_day = False
-            else:
-                print("False")
+    new_day_arr = []
+    for day_web_dict in web_day_arr:
+        print(day_web_dict)
+        bool_new_day = True
+        for day_db_dict in db_day_arr:
+            print(f"\t{day_db_dict}")
+            if day_web_dict["FullDate"] == day_db_dict["FullDate"]:
+                bool_new_day = False
+                break
 
-        if local_new_day:
-            status = "new"
-            new_day = True
-        elif not local_new_day:
-            status = "old"
-        print(f"Status - {status}")
-        var_arr.append({"FullDate": day_web_dict['FullDate'], "Date": day_web_dict['Date'], "StatusDay": status,
-                        "Link": day_web_dict["Link"]})  # {
-    if new_day:
-        database.Update_data(var_arr)
+        print("\t[Result - ", end="")
+        if bool_new_day:
+            print(f"{day_web_dict['FullDate']}: New day]")
+            new_day_arr.append({"FullDate": day_web_dict["FullDate"], "Link": day_web_dict["Link"]})
+        else:
+            print(f"{day_web_dict['FullDate']}: Old day]")
 
-    return new_day, var_arr
+    if new_day_arr:# Если есть новое расписание
+        database.Update_data(web_day_arr)
+    return new_day_arr
 
 
 kbt = parstb("ИБ31-18")
 while True:
     now = datetime.now()
-    print(" ")
-    web_arr = kbt.get_blogs()  # Создание словаря web_dict (записи из сайта кбт)
-    db_arr = database.Querying_data("table_days")  # Создание словаря db_dict (записи из базы)
+    print(f"\n[ ——— {now} ——— ]")
+    if now.hour in range(10, 23):
+        web_day_arr = kbt.get_blogs()  # Создание словаря web_dict (записи из сайта кбт)
+        db_day_arr = database.Querying_data("table_days")  # Создание словаря db_dict (записи из БД)
 
-    new_day, var_arr = check_new_day(web_arr, db_arr)  # Сравнение словарей на наличие новой записи
-    print(f"{var_arr} \n[New day - {new_day}]")
+        new_day_arr = check_new_day(web_day_arr, db_day_arr)  # Сравнение словарей на наличие новой записи
 
-    if new_day:
-        for day in var_arr:
-            if day['StatusDay'] == "new":
-                status_png = kbt.get_img_day(day['Date'])
+        if new_day_arr:
+            for new_day_dict in new_day_arr:
+                status_png = kbt.get_img(new_day_dict["Link"])
                 if status_png:
-                    status_send = vk.send_photo(2000000001, "Расписание")  # Отправка скриншота
+                    msg = f"{new_day_dict['FullDate']}.\nСсылка на расписание {new_day_dict['Link']} "
+                    status_send = vk.send_photo(2000000001, msg)  # Отправка скриншота

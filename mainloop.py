@@ -3,6 +3,7 @@ from parstb import parstb
 import database
 import vk
 from datetime import datetime
+import pytz
 
 
 def check_new_day(web_day_arr, db_day_arr):
@@ -31,9 +32,10 @@ def check_new_day(web_day_arr, db_day_arr):
 
 kbt = parstb("ИБ31-18")
 while True:
-    now = datetime.now()
+    tz = pytz.timezone('Europe/Moscow')
+    now = datetime.now(tz)
     print(f"\n[ ——— {now} ——— ]")
-    if now.hour in range(10, 23):
+    if now.hour in range(10, 15):
         web_day_arr = kbt.get_blogs()  # Создание словаря web_dict (записи из сайта кбт)
         db_day_arr = database.Querying_data("table_days")  # Создание словаря db_dict (записи из БД)
 
